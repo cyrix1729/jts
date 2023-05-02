@@ -23,7 +23,7 @@ const CrimeData = ({ location, onCrimeDataReceived }) => {
     // change this to current month
     const fetchCrimeData = async () => {
       const data = await getCrimeData(location, date);
-      console.log('data from crimeData', data)
+      console.log('Crime Data received')
       setCrimeData(data);
     };
     fetchCrimeData();

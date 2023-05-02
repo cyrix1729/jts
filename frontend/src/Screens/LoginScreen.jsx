@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import { View, 
   Text, 
   Image, 
@@ -15,17 +15,70 @@ import Logo from '../../assets/images/jts-logo-nobg-crop.png';
 import Oauth from '../Components/oauthSignIn';
 import { useNavigation } from '@react-navigation/native';
 import {useForm, Controller} from 'react-hook-form';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
   
-  const LoginScreen = () => {
-    const navigation = useNavigation();
-    const {control, handleSubmit, formState: {errors}} = useForm();
+const LoginScreen = () => {
+  const navigation = useNavigation();
+  const { control, handleSubmit, formState: { errors } } = useForm();
+  const [errorMessage, setErrorMessage] = useState(null);
 
-    const LoginPressed = (data) => {
-      console.log(data)
-      //send to backend
-      navigation.navigate('Home')
+  const autoLogin = async () => {
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      if (accessToken) {
+        const response = await axios.get('http://10.0.2.2:8000/api/CustomUser/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (response.status === 200) {
+          navigation.navigate('Home');
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-logging in', error);
     }
+  };
+
+  useEffect(() => {
+    autoLogin();
+  }, []);
+
+
+
+
+
+
+  const storeTokens = async (accessToken, refreshToken) => {
+    try {
+      await AsyncStorage.setItem('accessToken', accessToken);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+      console.log('Access token:', accessToken);
+      console.log('Refresh token:', refreshToken);
+    } catch (error) {
+      console.error('Error storing tokens', error);
+    }
+  };
+
+  const LoginPressed = async (data) => {
+    try {
+      const response = await axios.post(`http://10.0.2.2:8000/api/token/`, {
+        email: data.email,
+        password: data.password,
+      });
+
+      if (response.data && response.data.access && response.data.refresh) {
+        await storeTokens(response.data.access, response.data.refresh);
+        navigation.navigate('Home');
+      } else {
+        setErrorMessage('Error logging in');
+      }
+    } catch (error) {
+      setErrorMessage('Error logging in');
+      console.error('Error logging in', error);
+    }
+  };
 
     const redirectRegister = () => {
       navigation.navigate('SignUp')
@@ -86,6 +139,7 @@ import {useForm, Controller} from 'react-hook-form';
 
           {/* Adds space after forgot password button */}
           <View style = {styles.space}/> 
+          <Text style={styles.errorMessage}>{errorMessage}</Text>
         <Oauth/>
 
           {/* Redirect to make an account button */}
@@ -142,6 +196,12 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     alignItems: 'center',
     backgroundColor: '#1c1c1c',
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 10,
+    marginBottom: 10,
   },
 
 

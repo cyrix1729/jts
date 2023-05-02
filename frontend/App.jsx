@@ -15,8 +15,8 @@ const App = () => {
    }}>
 {/* Match status bar color with background */}
 <StatusBar backgroundColor="#1c1c1c" />
-   <Home/>
-      {/* <Navigation/> */}
+   {/* <Home/> */}
+      <Navigation/>
    </SafeAreaView>
   );
 };

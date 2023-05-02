@@ -35,6 +35,7 @@ return (
       width: 400,
       justifyContent: 'flex-end',
       alignItems: 'center',
+      backgroundColor: '#1c1c1c',
     },
     map: {
       ...StyleSheet.absoluteFillObject,

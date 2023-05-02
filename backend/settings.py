@@ -26,10 +26,10 @@ SECRET_KEY = "django-insecure-(8y79n2$1hedk^lr04@t14^!4j02uxl%_a_c@85i6f196k%7em
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*.localhost', 'localhost:8000', '127.0.0.1', '10.0.2.2']
 
-CORS_ALLOWED_ORIGINS = [
-"http://localhost:4200",
+CORS_ORIGIN_REGEX_WHITELIST = [
+    r'^https?://(localhost|127\.0\.0\.1)(:\d+)?$',
 ]
 # Application definition
 
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles", 
     'api', 
     'rest_framework',
+    'corsheaders',
     'rest_framework.authtoken',
 ]
 
@@ -50,6 +51,7 @@ AUTH_USER_MODEL = "api.CustomUser"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -135,7 +137,7 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+        'rest_framework.permissions.AllowAny'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',

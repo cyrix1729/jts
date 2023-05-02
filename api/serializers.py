@@ -4,13 +4,16 @@ from django.contrib.auth import get_user_model
 from .managers import CustomUserManager
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = get_user_model()
-        fields = '__all__'
-        
+        fields = ('id', 'email', 'password', 'is_staff', 'is_active', 'is_superuser', 'last_login', 'date_joined')
+
     def create(self, validated_data):
-        user_manager = CustomUserManager()
-        user = user_manager.create_user(email=validated_data['email'], password=validated_data['password'])
+        user = self.Meta.model(email=validated_data['email'])
+        user.set_password(validated_data['password'])
+        user.save()
         return user
         
         
