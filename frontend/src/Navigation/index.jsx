@@ -1,12 +1,12 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { View, Text, StyleSheet} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
 import ForgotPassword from '../Screens/ForgotPassword';
 import LoginScreen from '../Screens/LoginScreen';
 import SignUpScreen from '../Screens/SignUpScreen';
 import HomeScreen from '../Screens/Home';
+import LoadingScreen from '../Screens/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,6 +14,7 @@ const Navigation = () => {
   return (
     <NavigationContainer style>
       <Stack.Navigator screenOptions={{headerShown: false}}>
+      {/* <Stack.Screen name = 'Loading' component={LoadingScreen}/> */}
         <Stack.Screen name = 'Login' component={LoginScreen}/>
         <Stack.Screen name = 'SignUp' component={SignUpScreen}/>
         <Stack.Screen name = 'ForgotPassword' component={ForgotPassword}/>

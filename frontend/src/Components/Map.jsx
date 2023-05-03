@@ -5,6 +5,7 @@ import {useForm, Controller} from 'react-hook-form';
 import MapView, { PROVIDER_GOOGLE, AnimatedRegion, Animated} from 'react-native-maps';
 import UserLocation from './UserLocation';
 
+
 const Map = (location) => {
 
   const [lat, setLat] = useState('')

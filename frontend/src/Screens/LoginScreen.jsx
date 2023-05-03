@@ -7,7 +7,9 @@ import { View,
   Linking, 
   ScrollView, 
   Dimensions,
-  TextInput} 
+  TextInput,
+  TouchableOpacity, 
+  Animated } 
 from 'react-native';
 import CustomInput from '../Components/customInput';
 import CustomButton from '../Components/customButton';
@@ -44,11 +46,6 @@ const LoginScreen = () => {
   useEffect(() => {
     autoLogin();
   }, []);
-
-
-
-
-
 
   const storeTokens = async (accessToken, refreshToken) => {
     try {

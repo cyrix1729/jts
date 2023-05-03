@@ -50,7 +50,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return {
             'email': self.email,
             'date_joined': self.date_joined,
-            'user_type': self.user_type
+            'user_type': self.user_type,
+            'alias': self.alias,
         }
         
         

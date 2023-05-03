@@ -20,8 +20,8 @@ import Pings from '../Components/Pings';
 import { useNavigation } from '@react-navigation/native';
 import CustomButton from '../Components/customButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
+import { Button, IconButton, Colors } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 // Main Home component
 const Home = () => {
   // State to hold user location and crime data
@@ -35,6 +35,18 @@ const Home = () => {
   const sidePanelPosition = useRef(new Animated.Value(-250)).current;
   const navigation = useNavigation();
   const { width, height } = Dimensions.get('window');
+  const [userMarker, setUserMarker] = useState(null);
+  const [createMarkerEnabled, setCreateMarkerEnabled] = useState(false);
+  // Use Dark mode in maps if after 7pm
+  const [isNightTime, SetisNightTime] = useState(false);
+
+
+
+  const toggleCreateMarker = () => {
+    setCreateMarkerEnabled(!createMarkerEnabled);
+    console.log('long press')
+    setUserMarker(null);
+  };
 
   const redirectProfile = () => {
     navigation.navigate('Profile')
@@ -50,63 +62,16 @@ const Home = () => {
     }
   };
 
+  const handleMapLongPress = (e) => {
+    setUserMarker(e.nativeEvent.coordinate);
+    console.log('long pressss')
+  };
+
+
   const Logout = async () => {
     await removeTokens();
     navigation.navigate('Login');
   };
-
-  const toggleSidePanel = () => {
-    setIsSidePanelOpen(!isSidePanelOpen);
-    Animated.timing(sidePanelPosition, {
-      toValue: isSidePanelOpen ? -250 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const openSidePanel = () => {
-    Animated.timing(sidePanelPosition, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: false
-    }).start();
-  };
-
-  const closeSidePanel = () => {
-    Animated.timing(sidePanelPosition, {
-      toValue: -250,
-      duration: 250,
-      useNativeDriver: false
-    }).start();
-  };
-
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      if (gestureState.dx > 5) {
-        return true;
-      } else if (gestureState.dx < -5) {
-        return true;
-      } else {
-        return false;
-      }
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dx > 0) {
-        sidePanelPosition.setValue(gestureState.dx);
-      } else if (gestureState.dx < 0 && sidePanelPosition._value > -250) {
-        sidePanelPosition.setValue(-250 + gestureState.dx);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dx > 100) {
-        openSidePanel();
-      } else if (gestureState.dx < -100) {
-        closeSidePanel();
-      }
-    }
-  });
-
-
 
   // Callback function to update crime data state
   const handleCrimeDataReceived = (data) => {
@@ -181,6 +146,16 @@ const Home = () => {
     }
   };
 
+
+  useEffect(() => {
+    const currentTime = new Date().getHours();
+    if (currentTime >= 19 || currentTime <= 4){
+      SetisNightTime(true);
+    }
+    console.log('Night time: ', isNightTime)
+  }, []);
+
+  
   // Get the initial user location when the component mounts
   useEffect(() => {
     const getLocation = async () => {
@@ -230,7 +205,7 @@ const Home = () => {
   // Render the MapView with user location, crime markers, and crime data component
   return (
     <View style={styles.container}>
-      {/* Add a button to open the side panel */}
+      
 
       <MapView
         provider={PROVIDER_GOOGLE}
@@ -239,7 +214,8 @@ const Home = () => {
         showsTraffic={true}
         showsCompass={true}
         style={styles.map}
-        mapType="terrain"
+        customMapStyle={isNightTime ? mapStyleDark : mapStyle}
+        onLongPress={handleMapLongPress}
         region={{
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
@@ -247,6 +223,13 @@ const Home = () => {
           longitudeDelta: 0.0006,
         }}
       >
+        {userMarker && (
+  <Marker
+    coordinate={userMarker}
+    draggable
+    onDragEnd={(e) => setUserMarker(e.nativeEvent.coordinate)}
+  />
+)}
         {crimeData && crimeData.map((crime, i) => (
           <Marker
             key={i}
@@ -278,24 +261,27 @@ const Home = () => {
       </MapView>
       <CrimeData location={location} onCrimeDataReceived={handleCrimeDataReceived} />
        <Pings onPingsReceived={handlePingsReceived} />
-      <TouchableOpacity style={styles.sidePanelButton} onPress={toggleSidePanel}>
-        <Text style={styles.sidePanelButtonText}>{isSidePanelOpen ? 'Close Panel' : 'Settings'}</Text>
-      </TouchableOpacity>
-      <Animated.View style={[styles.sidePanel, { left: sidePanelPosition }]}>
-        <TouchableOpacity onPress={toggleSidePanel}>
-          <Text style={{ color: 'purple', marginTop: 10 }}>Close Panel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={toggleSidePanel}>
-          <Text style={{ color: 'black', marginTop: 10 }}>Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={toggleSidePanel}>
-          <Text style={{ color: 'black', marginTop: 10 }}>Information</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={Logout}>
-          <Text style={{ color: 'red', marginTop: 600}}>Logout</Text>
-        </TouchableOpacity>
-       
-      </Animated.View>
+       <View style={styles.panel}>
+       <IconButton
+          icon="arrow-right"
+          size={20}
+          onPress={() => console.log('Pressed')}
+  />
+        <Button
+          mode="contained"
+          onPress={() => console.log('Button 2 pressed')}
+          style={styles.button}
+        >
+          Start Trip
+        </Button>
+        <Button
+          mode="contained"
+          onPress={() => console.log('Button 1 pressed')}
+          style={styles.button}
+        >
+          Add Ping
+        </Button>
+      </View>
     </View>
   );
 };
@@ -333,8 +319,562 @@ const styles = StyleSheet.create({
   sidePanelButtonText: {
     color: '#fff',
     fontSize: 16
-  }
+  },
+  panel: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f8f8f8',
+    padding: 16,
+  },
+  button: {
+    width: '30%',
+  },
 });
+
+
+// Map styles
+const mapStyle = [
+  {
+    "featureType": "administrative.country",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.neighborhood",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.province",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape.man_made",
+    "stylers": [
+      {
+        "color": "#ebeaea"
+      },
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape.natural",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape.natural.landcover",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape.natural.terrain",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.attraction",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.business",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.government",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.medical",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#0fd263"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "color": "#9900ff"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#000000"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#00ff6e"
+      },
+      {
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "featureType": "poi.place_of_worship",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.school",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.sports_complex",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway.controlled_access",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "stylers": [
+      {
+        "visibility": "simplified"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "stylers": [
+      {
+        "color": "#00b3ff"
+      },
+      {
+        "visibility": "on"
+      },
+      {
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "visibility": "on"
+      }
+    ]
+  }
+]
+
+const mapStyleDark =
+[
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#1d2c4d"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#8ec3b9"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1a3646"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.country",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "color": "#4b6878"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#64779e"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.province",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "color": "#4b6878"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape.man_made",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "color": "#334e87"
+      }
+    ]
+  },
+  {
+    "featureType": "landscape.natural",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#023e58"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#283d6a"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#6f9ba5"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1d2c4d"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.business",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#023e58"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#3C7680"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#304a7d"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#98a5be"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1d2c4d"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#2c6675"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "color": "#255763"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#b0d5ce"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#023e58"
+      }
+    ]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#98a5be"
+      }
+    ]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1d2c4d"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#283d6a"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#3a4762"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#0e1626"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#4e6d70"
+      }
+    ]
+  }
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 export default Home;
