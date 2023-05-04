@@ -20,8 +20,7 @@ import Pings from '../Components/Pings';
 import { useNavigation } from '@react-navigation/native';
 import CustomButton from '../Components/customButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Button, IconButton, Colors } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import BottomPanel from '../Components/BottomPanel';
 // Main Home component
 const Home = () => {
   // State to hold user location and crime data
@@ -30,47 +29,45 @@ const Home = () => {
   // Ref for storing the watch position ID
   const watchId = useRef(null);
   const [pings, setPings] = useState([]);
-  // State to control the side panel position
-  const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
-  const sidePanelPosition = useRef(new Animated.Value(-250)).current;
   const navigation = useNavigation();
   const { width, height } = Dimensions.get('window');
+    // Used to share cooridnates with CreatePingScreen
   const [userMarker, setUserMarker] = useState(null);
   const [createMarkerEnabled, setCreateMarkerEnabled] = useState(false);
-  // Use Dark mode in maps if after 7pm
-  const [isNightTime, SetisNightTime] = useState(false);
+  // Use Dark mode in maps if it is night time
+  const [isNightTime, setisNightTime] = useState(false);
+  // 'Hold down to create ping' useState
+  const [message, setMessage] = useState('');
 
 
+  const getAlertStyle = (message) => ({
+    fontSize: 23,
+    marginBottom: 520,
+    color: 'red',
+    opacity: 0.8,
+    paddingLeft: 10,
+    paddingRight: 20,
+    textAlign: 'center',
+    marginLeft: 10,
+    backgroundColor: message === '' ? 'transparent' : 'rgba(0, 0, 0, 0.2)',
+  });
+  
+  const onPingPress = () => {
+    setMessage('Hold Down to Create a New Ping');
+  };
 
   const toggleCreateMarker = () => {
     setCreateMarkerEnabled(!createMarkerEnabled);
-    console.log('long press')
     setUserMarker(null);
   };
 
-  const redirectProfile = () => {
-    navigation.navigate('Profile')
-  }
-
-  const removeTokens = async () => {
-    try {
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      console.log('Tokens removed');
-    } catch (error) {
-      console.error('Error removing tokens', error);
-    }
-  };
-
   const handleMapLongPress = (e) => {
-    setUserMarker(e.nativeEvent.coordinate);
-    console.log('long pressss')
-  };
-
-
-  const Logout = async () => {
-    await removeTokens();
-    navigation.navigate('Login');
+    if (message !== ''){
+      setUserMarker(e.nativeEvent.coordinate);
+      setMessage('');
+      navigation.navigate('CreatePing', { userMarker: e.nativeEvent.coordinate });
+      setUserMarker(null);
+    } 
   };
 
   // Callback function to update crime data state
@@ -79,7 +76,7 @@ const Home = () => {
   };
 
   const handlePingsReceived = (pings) => {
-    console.log('Pings received')
+    console.log('Pings received from database')
     setPings(pings.pings || []);
   };
 
@@ -150,9 +147,9 @@ const Home = () => {
   useEffect(() => {
     const currentTime = new Date().getHours();
     if (currentTime >= 19 || currentTime <= 4){
-      SetisNightTime(true);
+      setisNightTime(true);
     }
-    console.log('Night time: ', isNightTime)
+    console.log(currentTime, 'Night time: ', isNightTime)
   }, []);
 
   
@@ -205,8 +202,6 @@ const Home = () => {
   // Render the MapView with user location, crime markers, and crime data component
   return (
     <View style={styles.container}>
-      
-
       <MapView
         provider={PROVIDER_GOOGLE}
         showsUserLocation={true}
@@ -257,31 +252,12 @@ const Home = () => {
     />
   ))}
         
-        
+
       </MapView>
+      <Text style={getAlertStyle(message)}>{message}</Text>
       <CrimeData location={location} onCrimeDataReceived={handleCrimeDataReceived} />
        <Pings onPingsReceived={handlePingsReceived} />
-       <View style={styles.panel}>
-       <IconButton
-          icon="arrow-right"
-          size={20}
-          onPress={() => console.log('Pressed')}
-  />
-        <Button
-          mode="contained"
-          onPress={() => console.log('Button 2 pressed')}
-          style={styles.button}
-        >
-          Start Trip
-        </Button>
-        <Button
-          mode="contained"
-          onPress={() => console.log('Button 1 pressed')}
-          style={styles.button}
-        >
-          Add Ping
-        </Button>
-      </View>
+       <BottomPanel onPingPress={onPingPress} />
     </View>
   );
 };
@@ -292,6 +268,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     height: 750,
     width: 400,
+    flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -299,37 +276,8 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   
-  sidePanel: {
-    position: 'absolute',
-    backgroundColor: '#B49FEF',
-    padding: 20,
-    width: 250,
-    height: '100%',
-    zIndex: 1000
-  },
-  sidePanelButton: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    backgroundColor: '#B49FEF',
-    borderRadius: 5,
-    padding: 10,
-    zIndex: 1000
-  },
-  sidePanelButtonText: {
-    color: '#fff',
-    fontSize: 16
-  },
-  panel: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#f8f8f8',
-    padding: 16,
-  },
-  button: {
-    width: '30%',
-  },
-});
+  });
+  
 
 
 // Map styles
@@ -386,10 +334,7 @@ const mapStyle = [
     "featureType": "landscape.man_made",
     "stylers": [
       {
-        "color": "#ebeaea"
-      },
-      {
-        "visibility": "on"
+        "visibility": "off"
       }
     ]
   },
@@ -405,7 +350,7 @@ const mapStyle = [
     "featureType": "landscape.natural.landcover",
     "stylers": [
       {
-        "visibility": "on"
+        "visibility": "simplified"
       }
     ]
   },
@@ -498,7 +443,7 @@ const mapStyle = [
     "elementType": "labels.text.stroke",
     "stylers": [
       {
-        "color": "#00ff6e"
+        "color": "#89F11E"
       },
       {
         "weight": 1

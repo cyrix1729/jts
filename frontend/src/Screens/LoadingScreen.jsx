@@ -6,27 +6,35 @@ import { useNavigation } from '@react-navigation/native';
 import Logo from '../../assets/images/jts-logo-nobg-crop.png';
 
 const LoadingScreen = () => {
-    const navigation = useNavigation();
-    const autoLogin = async () => {
-        try {
-          const accessToken = await AsyncStorage.getItem('accessToken');
-          if (accessToken) {
-            const response = await axios.get('http://10.0.2.2:8000/api/CustomUser/', {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            });
-    
-            if (response.status === 200) {
-              navigation.navigate('Home')
-            }
-          }
-        } catch (error) {
-            navigation.navigate('Login')
+  const navigation = useNavigation();
+
+  const autoLogin = async () => {
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      if (accessToken) {
+        const response = await fetch('http://10.0.2.2:8000/api/CustomUser/', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+  
+        if (response.status === 200) {
+          navigation.navigate('Home');
+        } else {
+          navigation.navigate('Login');
         }
-      };
-    
-      useEffect(() => {
-        autoLogin();
-      }, []);
+      } else {
+        navigation.navigate('Login');
+      }
+    } catch (error) {
+      navigation.navigate('Login');
+    }
+  };
+  
+  useEffect(() => {
+    autoLogin();
+  }, []);
 
 
 

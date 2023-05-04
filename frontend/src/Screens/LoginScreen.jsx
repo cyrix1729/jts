@@ -26,27 +26,6 @@ const LoginScreen = () => {
   const { control, handleSubmit, formState: { errors } } = useForm();
   const [errorMessage, setErrorMessage] = useState(null);
 
-  const autoLogin = async () => {
-    try {
-      const accessToken = await AsyncStorage.getItem('accessToken');
-      if (accessToken) {
-        const response = await axios.get('http://10.0.2.2:8000/api/CustomUser/', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (response.status === 200) {
-          navigation.navigate('Home');
-        }
-      }
-    } catch (error) {
-      console.error('Error auto-logging in', error);
-    }
-  };
-
-  useEffect(() => {
-    autoLogin();
-  }, []);
-
   const storeTokens = async (accessToken, refreshToken) => {
     try {
       await AsyncStorage.setItem('accessToken', accessToken);
@@ -69,10 +48,10 @@ const LoginScreen = () => {
         await storeTokens(response.data.access, response.data.refresh);
         navigation.navigate('Home');
       } else {
-        setErrorMessage('Error logging in');
+        setErrorMessage('Incorrent Credentials Entered');
       }
     } catch (error) {
-      setErrorMessage('Error logging in');
+      setErrorMessage('Incorrent Credentials Entered');
       console.error('Error logging in', error);
     }
   };
@@ -123,9 +102,9 @@ const LoginScreen = () => {
 
           {/* Submit button */}
           <CustomButton text = 'Login' onPress = {handleSubmit(LoginPressed)} type = 'primary' width = '95%'/>
-          
+          <Text style={styles.errorMessage}>{errorMessage}</Text>
           {/* Forgot password button */}
-          <View style = {{marginLeft: 'auto', marginRight: 10}}>
+          <View style = {{marginLeft: 'auto', marginRight: 10, marginTop: -30}}>
             <CustomButton 
             text  = 'Forgot Password?' 
             onPress = {redirectFP} 
@@ -133,10 +112,10 @@ const LoginScreen = () => {
             width = '40%' 
             alignment = 'flex-end' />
         </View>
-
+          
           {/* Adds space after forgot password button */}
           <View style = {styles.space}/> 
-          <Text style={styles.errorMessage}>{errorMessage}</Text>
+          
         <Oauth/>
 
           {/* Redirect to make an account button */}

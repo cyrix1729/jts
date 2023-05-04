@@ -7,6 +7,8 @@ import LoginScreen from '../Screens/LoginScreen';
 import SignUpScreen from '../Screens/SignUpScreen';
 import HomeScreen from '../Screens/Home';
 import LoadingScreen from '../Screens/LoadingScreen';
+import ProfileScreen from '../Screens/ProfileScreen';
+import CreatePingScreen from '../Screens/CreatePingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,11 +16,13 @@ const Navigation = () => {
   return (
     <NavigationContainer style>
       <Stack.Navigator screenOptions={{headerShown: false}}>
-      {/* <Stack.Screen name = 'Loading' component={LoadingScreen}/> */}
-        <Stack.Screen name = 'Login' component={LoginScreen}/>
+      <Stack.Screen name = 'Loading' component={LoadingScreen}/>
+      <Stack.Screen name = 'Login' component={LoginScreen}/>
         <Stack.Screen name = 'SignUp' component={SignUpScreen}/>
         <Stack.Screen name = 'ForgotPassword' component={ForgotPassword}/>
         <Stack.Screen name = 'Home' component={HomeScreen}/>
+        <Stack.Screen name = 'Profile' component={ProfileScreen}/> 
+        <Stack.Screen name = 'CreatePing'component={CreatePingScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -13,11 +13,11 @@ from rest_framework.routers import DefaultRouter
 urlpatterns = [
     path('pings/', views.pings_api),
     path('auth/', include('rest_framework.urls')),
+    path('signup/', views.signup, name='signup'),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    
 ]
 
 router = DefaultRouter()
-router.register('CustomUser',UserViewSet, basename = 'user')
+router.register('CustomUser', UserViewSet, basename='user')
 urlpatterns += router.urls

@@ -27,7 +27,8 @@ PING_TYPE_CHOICES = [
     ('busy','Busy'),
     ('litter','Litter'),
     ('wildlife','Wildlife'),
-    ('shops','Shops')
+    ('shops','Shops'),
+    ('other','Other'),
 ]
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
