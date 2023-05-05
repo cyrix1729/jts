@@ -25,7 +25,6 @@ const CreatePingScreen = (pingCoord) => {
     { iconName: 'alert', label: 'Busy' },
     { iconName: 'arrow-right', label: 'Other' },
   ];
-
   const createPing = async () => {
     try {
       const response = await fetch('http://10.0.2.2:8000/api/pings/', {
@@ -36,27 +35,28 @@ const CreatePingScreen = (pingCoord) => {
         body: JSON.stringify({
           lat: userMarker.latitude,
           long: userMarker.longitude,
-          ping_type: selectedIcon,
+          ping_type: selectedIcon.toLowerCase(),
           desc: description,
         }),
       });
   
       if (response.ok) {
-        // Handle successful post request (e.g., navigate to another screen)
+        navigation.navigate('Home')
       } else {
-        // Handle errors (e.g., display an error message)
+        
       }
     } catch (error) {
       console.error('Error:', error);
     }
   };
+  
   const renderIconButtons = () => {
     return iconData.map((icon) => (
       <View key={icon.iconName} style={styles.iconButtonContainer}>
         <IconButton
           iconName={icon.iconName}
-          active={selectedIcon === icon.iconName}
-          onPress={() => setSelectedIcon(icon.iconName)}
+          active={selectedIcon === icon.label}
+          onPress={() => setSelectedIcon(icon.label)}
           size={50}
           style={styles.iconButton}
         />

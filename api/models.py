@@ -62,8 +62,8 @@ class Ping(models.Model):
     ping_type = models.CharField(max_length=50, choices = PING_TYPE_CHOICES)
     
     # location
-    lat = models.DecimalField(max_digits=23, decimal_places=6)
-    long = models.DecimalField(max_digits=23, decimal_places=6)
+    lat = models.DecimalField(max_digits=21, decimal_places=18)
+    long = models.DecimalField(max_digits=21, decimal_places=18)
     
     # description
     desc = models.CharField(max_length = 200)
@@ -92,12 +92,12 @@ class Ping(models.Model):
 class Path(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     # start point
-    start_lat = models.DecimalField(max_digits=23, decimal_places=6)
-    start_long = models.DecimalField(max_digits=23, decimal_places=6)
+    start_lat = models.DecimalField(max_digits=21, decimal_places=18)
+    start_long = models.DecimalField(max_digits=21, decimal_places=18)
 
     # end point
-    end_lat = models.DecimalField(max_digits=23, decimal_places=6)
-    end_long = models.DecimalField(max_digits=23, decimal_places=6)
+    end_lat = models.DecimalField(max_digits=21, decimal_places=18)
+    end_long = models.DecimalField(max_digits=21, decimal_places=18)
 
     #Many-to-one relationship from user to path. A user can have many journeys. 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
