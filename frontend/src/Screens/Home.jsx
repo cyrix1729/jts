@@ -2,7 +2,7 @@
 // When the user moves more than 100m, the maps is rerendered, and new crime data is fetched (using the crimeData component)
 // Note: the crime Api fetches crime data in a 1 mile radius the coordinates given
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo  } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,15 +12,18 @@ import {
   Animated,
   PanResponder,
   Dimensions,
+  Image
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import CrimeData from '../Components/CrimeData';
-import Pings from '../Components/Pings';
 import { useNavigation } from '@react-navigation/native';
 import CustomButton from '../Components/customButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomPanel from '../Components/BottomPanel';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Pings from '../Components/Pings';
+
 // Main Home component
 const Home = () => {
   // State to hold user location and crime data
@@ -219,25 +222,25 @@ const Home = () => {
         }}
       >
         {userMarker && (
-  <Marker
-    coordinate={userMarker}
-    draggable
-    onDragEnd={(e) => setUserMarker(e.nativeEvent.coordinate)}
-  />
-)}
-        {crimeData && crimeData.map((crime, i) => (
           <Marker
-            key={i}
-            coordinate={{
-              latitude: parseFloat(crime.location.latitude),
-              longitude: parseFloat(crime.location.longitude),
-            }}
-            title={crime.category}
-            description={crime.month}
-            
-            pinColor={'yellow'}
+            coordinate={userMarker}
+            draggable
+            onDragEnd={(e) => setUserMarker(e.nativeEvent.coordinate)}
           />
-        ))}
+        )}
+        {crimeData && crimeData.map((crime, i) => (
+  <Marker
+    key={i}
+    coordinate={{
+      latitude: parseFloat(crime.location.latitude),
+      longitude: parseFloat(crime.location.longitude),
+    }}
+    title={crime.category}
+    description={crime.month}
+  >
+    <Icon name="exclamation-triangle" size={30} color="orange" />
+  </Marker>
+))}
 
 {pings && pings.map((ping, i) => (
     <Marker
@@ -246,9 +249,9 @@ const Home = () => {
         latitude: parseFloat(ping.lat),
         longitude: parseFloat(ping.long),
       }}
-      title={ping.desc}
-      description={ping.ping_type}
-      pinColor="red"
+      title={ping.ping_type}
+      description={ping.desc}
+      pinColor="blue"
     />
   ))}
         

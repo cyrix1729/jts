@@ -27,7 +27,7 @@ PING_TYPE_CHOICES = [
     ('busy','Busy'),
     ('litter','Litter'),
     ('wildlife','Wildlife'),
-    ('shops','Shops'),
+    ('view','View'),
     ('other','Other'),
 ]
 

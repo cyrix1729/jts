@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const deviceWidth = Dimensions.get('window').width;
 
-const BottomPanel = ({ onPingPress }) => {
+const BottomPanel = memo(({ onPingPress }) => {
   const navigation = useNavigation();
 
   const handleProfilePress = () => {
@@ -40,7 +40,7 @@ const BottomPanel = ({ onPingPress }) => {
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

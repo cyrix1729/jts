@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { View, Text } from 'react-native';
 import axios from 'axios';
 
@@ -15,7 +15,7 @@ const getCrimeData = async (location, date) => {
   }
 };
 
-const CrimeData = ({ location, onCrimeDataReceived }) => {
+const CrimeData = memo(({ location, onCrimeDataReceived }) => {
   const [crimeData, setCrimeData] = useState(null);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ const CrimeData = ({ location, onCrimeDataReceived }) => {
     <View>
     </View>
   );
-};
+});
 
 export default CrimeData;
 
