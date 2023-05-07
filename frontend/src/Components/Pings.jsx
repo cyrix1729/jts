@@ -8,6 +8,7 @@ const Pings = memo(({ onPingsReceived }) => {
       const Pings = await response.json();
       if (onPingsReceived) {
         onPingsReceived(Pings);
+        console.log(Pings)
       }
     } catch (error) {
       console.error(error);

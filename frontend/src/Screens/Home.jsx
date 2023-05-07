@@ -12,17 +12,27 @@ import {
   Animated,
   PanResponder,
   Dimensions,
-  Image
+  Image 
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import CrimeData from '../Components/CrimeData';
-import { useNavigation } from '@react-navigation/native';
-import CustomButton from '../Components/customButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import BottomPanel from '../Components/BottomPanel';
+import  { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView from 'react-native-map-clustering';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+//Components 
+import CustomButton from '../Components/customButton';
+import BottomPanel from '../Components/BottomPanel';
+import CrimeData from '../Components/CrimeData';
 import Pings from '../Components/Pings';
+import CrimeMarker from '../Components/CrimeMarker';
+import PingOverlay from '../Components/PingOverlay';
+
+//animations
+import * as Animatable from 'react-native-animatable';
+import LottieView from 'lottie-react-native';
+
 
 // Main Home component
 const Home = () => {
@@ -41,34 +51,68 @@ const Home = () => {
   const [isNightTime, setisNightTime] = useState(false);
   // 'Hold down to create ping' useState
   const [message, setMessage] = useState('');
+  //overlay that shows ping details
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [selectedPing, setSelectedPing] = useState(null);
+  const [expandedOverlay, setExpandedOverlay] = useState(false);
 
-
+  //For animation of create ping!
+  const ToastMessageAnimation = {
+    0: {
+      opacity: 1,
+      translateY: 30,
+    },
+    0.5: {
+      opacity: 1,
+      translateY: 0,
+    },
+    1: {
+      opacity: 0,
+      translateY: -30,
+    },
+  };
+    //displays alert message when user tries to create a new ping
   const getAlertStyle = (message) => ({
-    fontSize: 23,
-    marginBottom: 520,
-    color: 'red',
-    opacity: 0.8,
-    paddingLeft: 10,
-    paddingRight: 20,
-    textAlign: 'center',
-    marginLeft: 10,
-    backgroundColor: message === '' ? 'transparent' : 'rgba(0, 0, 0, 0.2)',
-  });
+  fontSize: 25,
+  marginBottom: 520,
+  color: 'backButton',
+  opacity: 0.9,
+  paddingLeft: 0,
+  paddingRight: 7,
+  textAlign: 'center',
+  marginLeft: 10,
+  fontWeight: 'bold',
+});
+
+const handleMarkerPress = (ping) => {
+  if (overlayVisible && selectedPing && selectedPing.id === ping.id) {
+    setOverlayVisible(false);
+    setSelectedPing(null);
+  } else {
+    setSelectedPing(ping);
+    setOverlayVisible(true);
+  }
+};
   
   const onPingPress = () => {
-    setMessage('Hold Down to Create a New Ping');
+    if (message === '') {
+      setMessage('Hold Down to Create a New Ping');
+    } else {
+      setMessage('');
+    }
   };
 
   const toggleCreateMarker = () => {
     setCreateMarkerEnabled(!createMarkerEnabled);
     setUserMarker(null);
+    setMessage('');
   };
 
   const handleMapLongPress = (e) => {
     if (message !== ''){
       setUserMarker(e.nativeEvent.coordinate);
       setMessage('');
-      navigation.navigate('CreatePing', { userMarker: e.nativeEvent.coordinate });
+      navigation.replace('CreatePing', { userMarker: e.nativeEvent.coordinate });
       setUserMarker(null);
     } 
   };
@@ -82,6 +126,8 @@ const Home = () => {
     console.log('Pings received from database')
     setPings(pings.pings || []);
   };
+
+    
 
   // Function to calculate the distance between two points in meters
   const calculateDistance = (prevPosition, newPosition) => {
@@ -120,6 +166,24 @@ const Home = () => {
     );
   };
 
+  const showToastMessage = (message) => {
+    if (message !== "") {
+      return (
+        <Animatable.Text
+          animation={ToastMessageAnimation}
+          duration={6000}
+          iterationCount='infinite'
+          onAnimationEnd={() => setMessage("")}
+          style={getAlertStyle(message)}
+        >
+          {message}
+        </Animatable.Text>
+      );
+    } else {
+      return null;
+    }
+  };
+
   // Function to request location permission from the user
   const requestLocationPermission = async () => {
     try {
@@ -133,7 +197,6 @@ const Home = () => {
           buttonPositive: 'OK',
         },
       );
-      console.log('granted', granted);
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
         console.log('Geolocation Permission granted');
         return true;
@@ -164,7 +227,7 @@ const Home = () => {
       if (result) {
         Geolocation.getCurrentPosition(
           position => {
-            console.log(position);
+
             setLocation(position);
           },
           error => {
@@ -207,6 +270,8 @@ const Home = () => {
     <View style={styles.container}>
       <MapView
         provider={PROVIDER_GOOGLE}
+        animationEnabled = {false}
+
         showsUserLocation={true}
         followsUserLocation={true}
         showsTraffic={true}
@@ -221,15 +286,8 @@ const Home = () => {
           longitudeDelta: 0.0006,
         }}
       >
-        {userMarker && (
-          <Marker
-            coordinate={userMarker}
-            draggable
-            onDragEnd={(e) => setUserMarker(e.nativeEvent.coordinate)}
-          />
-        )}
         {crimeData && crimeData.map((crime, i) => (
-  <Marker
+  <CrimeMarker
     key={i}
     coordinate={{
       latitude: parseFloat(crime.location.latitude),
@@ -237,27 +295,32 @@ const Home = () => {
     }}
     title={crime.category}
     description={crime.month}
-  >
-    <Icon name="exclamation-triangle" size={30} color="orange" />
-  </Marker>
+  />
 ))}
 
 {pings && pings.map((ping, i) => (
-    <Marker
-      key={`ping-${i}`}
-      coordinate={{
-        latitude: parseFloat(ping.lat),
-        longitude: parseFloat(ping.long),
-      }}
-      title={ping.ping_type}
-      description={ping.desc}
-      pinColor="blue"
-    />
-  ))}
-        
-
+  <Marker
+    key={`ping-${i}`}
+    coordinate={{
+      latitude: parseFloat(ping.lat),
+      longitude: parseFloat(ping.long),
+    }}
+    pinColor={ping.rating >= 5 ? 'green' : 'red'}
+    onPress={() => handleMarkerPress(ping)}
+  />
+))}
       </MapView>
-      <Text style={getAlertStyle(message)}>{message}</Text>
+      
+
+
+      <PingOverlay
+  overlayVisible={overlayVisible}
+  selectedPing={selectedPing}
+  expandedOverlay={expandedOverlay}
+  setExpandedOverlay={setExpandedOverlay}
+  onClose={() => setOverlayVisible(false)}
+/>
+{showToastMessage(message)}
       <CrimeData location={location} onCrimeDataReceived={handleCrimeDataReceived} />
        <Pings onPingsReceived={handlePingsReceived} />
        <BottomPanel onPingPress={onPingPress} />
@@ -410,7 +473,7 @@ const mapStyle = [
     "elementType": "geometry.fill",
     "stylers": [
       {
-        "color": "#0fd263"
+        "color": "#55AC47"
       }
     ]
   },

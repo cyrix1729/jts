@@ -1,9 +1,16 @@
-import { View, Text, StyleSheet, Image} from 'react-native'
-import React, {useState, useEffect} from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Animated,
+  Easing,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import Logo from '../../assets/images/jts-logo-nobg-crop.png';
+import * as Animatable from 'react-native-animatable';
 
 const LoadingScreen = () => {
   const navigation = useNavigation();
@@ -18,50 +25,70 @@ const LoadingScreen = () => {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-  
+
         if (response.status === 200) {
-          navigation.navigate('Home');
+          navigation.replace('Home');
         } else {
-          navigation.navigate('Login');
+          navigation.replace('Login');
         }
       } else {
-        navigation.navigate('Login');
+        navigation.replace('Login');
       }
     } catch (error) {
-      navigation.navigate('Login');
+      navigation.replace('Login');
     }
   };
-  
+
   useEffect(() => {
-    autoLogin();
+    const timer = setTimeout(() => {
+      autoLogin();
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
-
+  const CustomAnimation = {
+    0: {
+      opacity: 0,
+      scale: 0,
+    },
+    0.5: {
+      opacity: 1,
+      scale: 1.2,
+    },
+    1: {
+      opacity: 1,
+      scale: 1,
+    },
+  };
 
   return (
-    <View style = {styles.contentContainer}>
-      <Image source = {Logo} style = {styles.logo}/>
+    <View style={styles.contentContainer}>
+      <Animatable.Image
+        animation={CustomAnimation}
+        duration={2500}
+        iterationCount={1}
+        source={Logo}
+        style={styles.logo}
+      />
     </View>
-  )
+  );
 };
 
 const styles = StyleSheet.create({
-    logo: {
-        width: '70%',
-        maxWidth: 300,
-        alignSelf: 'center',
-        height: 120,
-        marginBottom: 70,
+  logo: {
+    width: '70%',
+    maxWidth: 300,
+    alignSelf: 'center',
+    height: 120,
+    marginBottom: 70,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+  },
+});
 
-      },
-    contentContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#1c1c1c',
-      },
-})
-
-
-
-export default LoadingScreen
+export default LoadingScreen;

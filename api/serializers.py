@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Ping
+from .models import CustomUser, Ping, Comment
 from django.contrib.auth import get_user_model
 from .managers import CustomUserManager
 
@@ -17,6 +17,15 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 class PingSerializer(serializers.ModelSerializer):
+    creator_alias = serializers.StringRelatedField(source='creator.alias', read_only=True)
+
     class Meta:
         model = Ping
+        fields = '__all__'
+
+class CommentSerializer(serializers.ModelSerializer):
+    creator_alias = serializers.StringRelatedField(source='creator.alias', read_only=True)  
+
+    class Meta:
+        model = Comment
         fields = '__all__'

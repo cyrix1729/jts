@@ -6,6 +6,7 @@ import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Slider from '@react-native-community/slider';
 import IconButton from '../Components/IconButton';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const CreatePingScreen = (pingCoord) => {
   const [selectedIcon, setSelectedIcon] = useState(null);
@@ -15,18 +16,40 @@ const CreatePingScreen = (pingCoord) => {
   const [rating, setRating] = useState(5);
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
+  const [typeError, setTypeError] = useState('');
+  const [descriptionError, setDescriptionError] = useState(''); 
+
 
   const iconData = [
     { iconName: 'bird', label: 'Wildlife' },
     { iconName: 'road', label: 'Road' },
     { iconName: 'walk', label: 'Pavement' },
-    { iconName: 'trash-can', label: 'Trash' },
-    { iconName: 'shopping', label: 'Shopping' },
-    { iconName: 'alert', label: 'Busy' },
-    { iconName: 'arrow-right', label: 'Other' },
+    { iconName: 'trash-can', label: 'Litter' },
+    { iconName: 'binoculars', label: 'View' },
+    { iconName: 'account-group', label: 'Busy' },
+    { iconName: 'dots-horizontal', label: 'Other' },
   ];
+
+  const goBack = () => {
+    navigation.replace('Home');
+  };
+
+
   const createPing = async () => {
-    try {
+    if (!selectedIcon) {
+      setTypeError('Please choose type');
+    } else {
+      setTypeError('');
+    }
+
+    if (!description.trim()) {
+      setDescriptionError('Please write a description');
+    } else {
+      setDescriptionError('');
+    }
+
+    if (selectedIcon && description.trim()) {
+      try {
       const response = await fetch('http://10.0.2.2:8000/api/pings/', {
         method: 'POST',
         headers: {
@@ -37,6 +60,7 @@ const CreatePingScreen = (pingCoord) => {
           long: userMarker.longitude,
           ping_type: selectedIcon.toLowerCase(),
           desc: description,
+          rating: rating,
         }),
       });
   
@@ -48,7 +72,8 @@ const CreatePingScreen = (pingCoord) => {
     } catch (error) {
       console.error('Error:', error);
     }
-  };
+  }
+};
   
   const renderIconButtons = () => {
     return iconData.map((icon) => (
@@ -67,21 +92,26 @@ const CreatePingScreen = (pingCoord) => {
 
   return (
     <View style={styles.container}>
-  
+      <TouchableOpacity onPress={goBack} style={styles.backButton}>
+        <MaterialIcons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
       <Text style={styles.inputTitle}>Type</Text>
       <View style={styles.iconContainer}>{renderIconButtons()}</View>
-      <Text style={styles.inputTitle}>Description</Text>
+      {typeError ? <Text style={styles.errorText}>{typeError}</Text> : null}
+      <Text style={styles.inputTitle}>Describe your ping</Text>
       <TextInput
-  style={styles.textInput}
+        style={[styles.textInput, { textAlignVertical: 'top' }]}
+        onChangeText={(text) => setDescription(text)}
+        value={description}
+        maxLength={199}
+        multiline
+        numberOfLines={3}
+      />
+      {descriptionError ? (
+        <Text style={styles.errorText}>{descriptionError}</Text>
+      ) : null}
 
-  onChangeText={text => setDescription(text)}
-  value={description}
-  maxLength={199}
-  multiline
-  numberOfLines={4} // Optional: set the maximum visible lines
-/>
-
-  <Text style={styles.inputTitle}>Rating - Rate your ping </Text>
+  <Text style={styles.inputTitle}>How do you feel your ping? </Text>
   <View style={styles.row}>
   <Icon
     name="emoticon-sad"
@@ -155,7 +185,7 @@ const styles = StyleSheet.create({
     marginBottom: 60,
     backgroundColor: '#3a3b3d',
     color: '#7a7b7d',
-    height: 100, // Set a fixed height for the TextInput
+    height: 90, // Set a fixed height for the TextInput
   },
   button: {
     backgroundColor: '#5438f2',
@@ -182,14 +212,25 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   iconLabel: {
-    color: '#fff',
+    color: 'white',
     fontSize: 12,
     textAlign: 'center',
   },
   createButtonContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    marginBottom: 20,}
+    marginBottom: 20,},
+    
+    backButton: {
+      position: 'absolute',
+      top: 10,
+      right: 10,
+      zIndex: 10,
+    },
+    errorText: {
+      color: 'red',
+      marginBottom: 20,
+    },
 });
 
 export default CreatePingScreen;

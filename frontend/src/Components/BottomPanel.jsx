@@ -25,7 +25,7 @@ const BottomPanel = memo(({ onPingPress }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: '#5438f2', width: deviceWidth + 20 }]}>
+    <View style={[styles.container, { backgroundColor: '#7a63ff', width: deviceWidth + 20 }]}>
       <IconButton
         icon={() => <MaterialCommunityIcons name="account" size={24} color="white" />}
         onPress={handleProfilePress}
