@@ -1,13 +1,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 
-
-
-//To give relative time stamp on comments, e.g. 1 hour ago, 2 weeks ago, etc.
 const formatDateRelative = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
+  const date = new Date(dateString).getTime();
+  const now = new Date().getTime();
+  const timeDifference = Math.max(0, now - date); // Ensure time difference is non-negative
+  const seconds = Math.floor(timeDifference / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);

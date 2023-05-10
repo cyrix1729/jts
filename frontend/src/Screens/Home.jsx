@@ -2,24 +2,21 @@
 // When the user moves more than 100m, the maps is rerendered, and new crime data is fetched (using the crimeData component)
 // Note: the crime Api fetches crime data in a 1 mile radius the coordinates given
 
-import React, { useState, useEffect, useRef, memo  } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  PermissionsAndroid,
-  Animated,
-  PanResponder,
-  Dimensions,
-  Image 
+// To find the path with the least crime, multiple paths to the same location are found, then the path with the least crime pings on it is chosen. 
+import React, { useState, useEffect, useRef, memo} from 'react';
+import {StyleSheet,View,Text,TouchableOpacity,PermissionsAndroid,Animated,PanResponder,Dimensions, Image,Easing,Modal,
+
 } from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
-import  { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import MapView from 'react-native-map-clustering';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+//Google API imports + other map imports. For mapview, clustering, directions, autocomplete 
+import Geolocation from 'react-native-geolocation-service';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
+import MapView from 'react-native-map-clustering';
+import MapViewDirections from 'react-native-maps-directions';
 
 //Components 
 import CustomButton from '../Components/customButton';
@@ -28,11 +25,12 @@ import CrimeData from '../Components/CrimeData';
 import Pings from '../Components/Pings';
 import CrimeMarker from '../Components/CrimeMarker';
 import PingOverlay from '../Components/PingOverlay';
+import RouteSettings from '../Components/RouteSettings';
 
+import {MenuProvider} from 'react-native-popup-menu';
 //animations
 import * as Animatable from 'react-native-animatable';
-import LottieView from 'lottie-react-native';
-
+import _ from 'lodash';
 
 // Main Home component
 const Home = () => {
@@ -51,11 +49,102 @@ const Home = () => {
   const [isNightTime, setisNightTime] = useState(false);
   // 'Hold down to create ping' useState
   const [message, setMessage] = useState('');
+  const [journeyMessage, setJourneyMessage] = useState('');
+  const [currentAction, setCurrentAction] = useState(null);
   //overlay that shows ping details
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [selectedPing, setSelectedPing] = useState(null);
   const [expandedOverlay, setExpandedOverlay] = useState(false);
+  const [destinationMarker, setDestinationMarker] = useState(null);
+  const GOOGLE_MAPS_APIKEY = 'AIzaSyAJzCyJv6V7oAWaczdh-ji7F3m4JOkyeMM';
+  const [inJourney, setinJourney] = useState(false);
+  //to toggle traffic on and off
+  const [showsTraffic, setShowsTraffic] = useState(false);
+  //When toggled on, shows the user the path with the most pings that have a rating of 5 or above
+  const [highestRatedPath, setHighestRatedPath] = useState(false);
+  const [safestPath, setSafestPath] = useState(false);
 
+
+  const handleMenuOptionSelect = (option) => {
+    switch (option) {
+      case 'most positive pings':
+        setHighestRatedPath(true);
+        setSafestPath(false);
+        break;
+      case 'least crime reports':
+        setSafestPath(true);
+        setHighestRatedPath(false);
+        break;
+      default:
+        setHighestRatedPath(false);
+        setSafestPath(false);
+    }
+  };
+
+  const calculateRatingScore = (route) => {
+    let score = 0;
+    pings.forEach((ping) => {
+      route.coordinates.forEach((coord) => {
+        const distance = calculateDistance({ coords: coord }, { coords: ping });
+        if (distance <= 100 && ping.rating >= 5) {
+          score++;
+        }
+      });
+    });
+    return score;
+  };
+
+  const findHighestRatedRoute = (routes) => {
+    let safestRoute = null;
+    let minScore = Number.MAX_VALUE;
+    routes.forEach((route) => {
+      const safetyScore = calculateRatingScore(route);
+      if (safetyScore < minScore) {
+        minScore = safetyScore;
+        safestRoute = route;
+      }
+    });
+    return safestRoute;
+  };
+
+  const toggleTraffic = () => {
+    setShowsTraffic(!showsTraffic);
+  };
+
+  const onJourneyPress = () => {
+  if (journeyMessage === '') {
+    setJourneyMessage('Hold to choose destination');
+    setCurrentAction('journey');
+    setMessage(''); // Reset the create ping message state
+  } else {
+    setJourneyMessage('');
+    setCurrentAction(null);
+  }
+  // Toggle off the run button after setting the destination marker
+  if (destinationMarker) {
+    setDestinationMarker(null);
+    setJourneyMessage('');
+  }
+};
+  
+  const onPingPress = () => {
+    if (message === '') {
+      setMessage('Hold Down to Create a New Ping');
+      setCurrentAction('ping');
+      setJourneyMessage(''); // Reset the journey message state
+    } else {
+      setMessage('');
+      setCurrentAction(null);
+    }
+  };
+  
+  const handleSearchResult = (data, details) => {
+    // Update the map region to the searched location
+    if (details.geometry && details.geometry.location) {
+      const { lat, lng } = details.geometry.location;
+      setLocation({ ...location, coords: { latitude: lat, longitude: lng } });
+    }
+  };
   //For animation of create ping!
   const ToastMessageAnimation = {
     0: {
@@ -72,7 +161,7 @@ const Home = () => {
     },
   };
     //displays alert message when user tries to create a new ping
-  const getAlertStyle = (message) => ({
+  const getAlertStyle = (message, color) => ({
   fontSize: 25,
   marginBottom: 520,
   color: 'backButton',
@@ -82,6 +171,8 @@ const Home = () => {
   textAlign: 'center',
   marginLeft: 10,
   fontWeight: 'bold',
+  color: color, 
+
 });
 
 const handleMarkerPress = (ping) => {
@@ -94,13 +185,6 @@ const handleMarkerPress = (ping) => {
   }
 };
   
-  const onPingPress = () => {
-    if (message === '') {
-      setMessage('Hold Down to Create a New Ping');
-    } else {
-      setMessage('');
-    }
-  };
 
   const toggleCreateMarker = () => {
     setCreateMarkerEnabled(!createMarkerEnabled);
@@ -109,12 +193,17 @@ const handleMarkerPress = (ping) => {
   };
 
   const handleMapLongPress = (e) => {
-    if (message !== ''){
-      setUserMarker(e.nativeEvent.coordinate);
-      setMessage('');
-      navigation.replace('CreatePing', { userMarker: e.nativeEvent.coordinate });
-      setUserMarker(null);
-    } 
+    if (currentAction === 'ping') {
+      if (message !== '') {
+        setUserMarker(e.nativeEvent.coordinate);
+        setMessage('');
+        navigation.replace('CreatePing', { userMarker: e.nativeEvent.coordinate });
+        setUserMarker(null);
+      }
+    } else if (currentAction === 'journey') {
+      setDestinationMarker(e.nativeEvent.coordinate);
+      setJourneyMessage(''); // Set the journey message to an empty string after placing the marker
+    }
   };
 
   // Callback function to update crime data state
@@ -166,7 +255,25 @@ const handleMarkerPress = (ping) => {
     );
   };
 
-  const showToastMessage = (message) => {
+  const MiniMenuOption = ({ label, onPress }) => (
+    <TouchableOpacity onPress={onPress}>
+    <Text style={styles.miniMenuOption}>{label}</Text>
+    </TouchableOpacity>
+    );
+
+    const onDirectionsReady = (result) => {
+      const routes = result.routes;
+      if (routes && routes.length > 0) {
+        const safestRoute = findHighestRatedRoute(routes);
+        if (safestRoute) {
+          setHighestRatedPath(safestRoute);
+        } else {
+          setHighestRatedPath(null);
+        }
+      }
+    };
+
+  const showToastMessage = (message, color) => {
     if (message !== "") {
       return (
         <Animatable.Text
@@ -174,7 +281,7 @@ const handleMarkerPress = (ping) => {
           duration={6000}
           iterationCount='infinite'
           onAnimationEnd={() => setMessage("")}
-          style={getAlertStyle(message)}
+          style={getAlertStyle(message, color)}
         >
           {message}
         </Animatable.Text>
@@ -215,7 +322,6 @@ const handleMarkerPress = (ping) => {
     if (currentTime >= 19 || currentTime <= 4){
       setisNightTime(true);
     }
-    console.log(currentTime, 'Night time: ', isNightTime)
   }, []);
 
   
@@ -265,16 +371,55 @@ const handleMarkerPress = (ping) => {
     );
   }
 
-  // Render the MapView with user location, crime markers, and crime data component
+
+  // Render
   return (
     <View style={styles.container}>
-      <MapView
-        provider={PROVIDER_GOOGLE}
-        animationEnabled = {false}
+      <GooglePlacesAutocomplete
+        placeholder="Search for a location"
+        minLength={2}
+        autoFocus={false}
+        returnKeyType={'search'}
+        listViewDisplayed="auto"
+        fetchDetails={true}
+        onPress={handleSearchResult}
+        query={{
+          key: GOOGLE_MAPS_APIKEY,
+          language: 'en',
+        }}
+        styles={{
+          container: styles.searchContainer,
+          textInputContainer: {
+            ...styles.textInputContainer,
+          },
+          textInput: {
+            ...styles.textInput,
+            color: 'white',
+            fontSize: 18,
+            backgroundColor: '#1c1c1c',
+            borderRadius: 20,
+            paddingLeft: 12,
+          },
+          listView: {
+            borderRadius: 20,
+          },
+          predefinedPlacesDescription: {
+            color: 'black',
+          },
+        }}
+        nearbyPlacesAPI="GooglePlacesSearch"
+        debounce={200}
+        renderDescription={(rowData) => (
+          <Text style={{ color: 'black' }}>{rowData.description || rowData.name || rowData.formatted_address || rowData.vicinity}</Text>
+        )}
+      />
 
+     <MapView
+        provider={PROVIDER_GOOGLE}
+        animationEnabled={false}
         showsUserLocation={true}
         followsUserLocation={true}
-        showsTraffic={true}
+        showsTraffic={showsTraffic} // Use the state variable for showsTraffic
         showsCompass={true}
         style={styles.map}
         customMapStyle={isNightTime ? mapStyleDark : mapStyle}
@@ -286,6 +431,8 @@ const handleMarkerPress = (ping) => {
           longitudeDelta: 0.0006,
         }}
       >
+
+
         {crimeData && crimeData.map((crime, i) => (
   <CrimeMarker
     key={i}
@@ -309,8 +456,49 @@ const handleMarkerPress = (ping) => {
     onPress={() => handleMarkerPress(ping)}
   />
 ))}
-      </MapView>
-      
+     {destinationMarker && (
+    <Marker
+      key="destination-marker"
+      coordinate={destinationMarker}
+      title="Destination"
+    />
+  )}
+
+{location && destinationMarker && highestRatedPath && highestRatedPath.coordinates && (
+  <Polyline
+    coordinates={highestRatedPath.coordinates}
+    strokeWidth={6}
+    strokeColor="hotpink"
+  />
+)}
+{location && destinationMarker && (
+ <MapViewDirections
+ origin={{
+   latitude: location.coords.latitude,
+   longitude: location.coords.longitude,
+ }}
+ destination={destinationMarker}
+ apikey={GOOGLE_MAPS_APIKEY}
+ strokeWidth={6} // Change the strokeWidth to a value greater than 0, e.g., 3
+ strokeColor="red" // Set the color of the polyline, e.g., blue
+ mode="WALKING"
+ computeAlternativeRoutes={true}
+ onReady={onDirectionsReady}
+/>
+)}
+</MapView>
+<View style={{ position: 'absolute', zIndex: 10, right: 12, bottom: 70, }}>
+<RouteSettings onMenuOptionSelect={handleMenuOptionSelect} />
+</View>
+<TouchableOpacity 
+        style={[
+          styles.trafficButton,
+          { backgroundColor: showsTraffic ? 'rgba(0, 0, 0, 1)' : 'rgba(0, 0, 0, 0.3)',  },
+        ]}
+        onPress={toggleTraffic}
+      >
+        <Icon name="car" size={24} color={showsTraffic ? '#7a63ff' : 'gray'} />
+      </TouchableOpacity>
 
 
       <PingOverlay
@@ -320,10 +508,16 @@ const handleMarkerPress = (ping) => {
   setExpandedOverlay={setExpandedOverlay}
   onClose={() => setOverlayVisible(false)}
 />
-{showToastMessage(message)}
+{currentAction === 'journey' ? (
+  showToastMessage(journeyMessage, 'blue')
+) : (
+  showToastMessage(message, 'red')
+)}
       <CrimeData location={location} onCrimeDataReceived={handleCrimeDataReceived} />
-       <Pings onPingsReceived={handlePingsReceived} />
-       <BottomPanel onPingPress={onPingPress} />
+      <Pings onPingsReceived={handlePingsReceived} />
+      <BottomPanel onPingPress={onPingPress} onJourneyPress={onJourneyPress} />
+
+      
     </View>
   );
 };
@@ -341,8 +535,81 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  
-  });
+  searchContainer: {
+    width: '94%', 
+    height: '30%',
+    left: 8,
+    position: 'absolute',
+    top: 12,
+    zIndex: 10,
+    alignSelf: 'center', 
+    borderRadius: 10,
+  },
+  textInputContainer: {
+    width: '93%', 
+    right:5,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    paddingHorizontal: 10,
+  },
+  textInput: {
+    backgroundColor: '#54535c',
+    marginLeft: 0,
+    marginRight: 0,
+    height: 38,
+    color: '#5d5d5d',
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  journeyMessage: {
+    color: 'blue',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  regularMessage: {
+    color: 'red',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  trafficButton: {
+    position: 'absolute',
+    zIndex: 10,
+    borderRadius: 30,
+    width: 45,
+    height: 45,
+    alignItems: 'center',
+    justifyContent: 'center',
+    right: 10,
+    bottom: 120,
+  },
+  miniMenuButton: {
+    position: 'absolute',
+    top: 160,
+    right: 15,
+    height: 50,
+    width: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+    miniMenuOptions: {
+    position: 'absolute',
+    top: 220,
+    right: 15,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    },
+    miniMenuOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    },
+    });
   
 
 
@@ -873,19 +1140,6 @@ const mapStyleDark =
     ]
   }
 ]
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 export default Home;

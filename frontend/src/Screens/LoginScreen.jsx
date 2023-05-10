@@ -30,8 +30,6 @@ const LoginScreen = () => {
     try {
       await AsyncStorage.setItem('accessToken', accessToken);
       await AsyncStorage.setItem('refreshToken', refreshToken);
-      console.log('Access token:', accessToken);
-      console.log('Refresh token:', refreshToken);
     } catch (error) {
       console.error('Error storing tokens', error);
     }

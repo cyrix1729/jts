@@ -11,10 +11,34 @@ const SignUpScreen = () => {
     const navigation = useNavigation();
     const {control, handleSubmit, watch, formState: {errors}} = useForm();
     const password1 = watch('password')
-
-    const onRegisterPress = () => {
-        navigation.navigate('Home')
-    }
+    
+    const onRegisterPress = async (data) => {
+      try {
+        const response = await fetch("http://10.0.2.2:8000/api/signup/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            alias: data.username,
+            password: data.password,
+          }),
+        });
+    
+        const responseData = await response.json();
+        
+        if (response.ok) {
+          navigation.replace("Login");
+          console.log("User successfully created:", responseData);
+          // Store the access token and other received data as needed
+        } else {
+          console.warn("Error creating user:", responseData);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
 
     const onPressTermsLink = () => {
         console.warn('onPressTermsLink')

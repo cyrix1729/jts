@@ -97,6 +97,7 @@ const addComment = async () => {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },
+          
         });
   
         // Update the votes count in the selectedPing object
@@ -114,7 +115,7 @@ const addComment = async () => {
   };
   const smallOverlayContent = (
     <>
-      <Text style={{ color: 'white', fontSize: 24 }}>Type: {selectedPing.type}</Text>
+      <Text style={{ color: 'white', fontSize: 24 }}>Type: {selectedPing.ping_type}</Text>
       <Text style={{ color: 'white', fontSize: 18 }}>Rating: {selectedPing.rating}</Text>
       <Text style={{ color: 'white', fontSize: 18 }}>Votes: {selectedPing.votes}</Text>
       <Text style={{ color: 'white', fontSize: 18, paddingBottom: 5}}>Comments: {comments.length}</Text>
@@ -133,63 +134,61 @@ const addComment = async () => {
   );
 
   const expandedOverlayContent = (
-    <ScrollView
-      style={{ width: '100%', paddingTop: 10 }}
-      contentContainerStyle={{ paddingBottom: 20 }}
-    >
-      <TouchableOpacity onPress={() => setExpandedOverlay(false)} style={{ position: 'absolute', top: -20, left: -10 }}>
+    <>
+      <TouchableOpacity onPress={() => setExpandedOverlay(false)} style={{ position: 'absolute', top: 10, left: -10 }}>
         <MaterialIcons name="expand-more" size={30} color="white" />
       </TouchableOpacity>
-      <View style={{ marginBottom: 190 }}>
-      <View style = {{marginBottom: 190}}>
-      <Text style={{ color: 'white', fontSize: 24 }}>Type: {selectedPing.ping_type}</Text>
-      <Text style={{ color: 'white', fontSize: 18 }}>Description: {selectedPing.desc}</Text>
-      <Text style={{ color: 'white', fontSize: 18 }}>Rating: {selectedPing.rating}</Text>
-      <Text style={{ color: 'white', fontSize: 18 }}>Votes: {selectedPing.votes}</Text>
-      <View style={{ borderBottomWidth: 1, borderBottomColor: 'white', width: '100%', marginVertical: 10 }} />
-      <View style={{ marginTop: 10 }}>
-        <Text style={{ color: 'white', fontSize: 18, marginBottom: 5 }}>Comments</Text>
-        <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginTop: 10,
-          backgroundColor: 'white',
-          borderRadius: 9,
-          paddingHorizontal: 5,
-          borderColor: '#ccc',
-          borderWidth: 1,
-        }}
-      >
-        <TextInput
-          style={{ flex: 1, marginRight: 5, fontSize: 14}}
-          placeholder="Add a comment..."
-          onChangeText={setNewCommentText}
-          value={newCommentText}
-        />
-        <TouchableOpacity onPress={addComment}>
-          <MaterialIcons name="add" size={23} color="#5438f2" />
-        </TouchableOpacity>
-      </View>
       <FlatList
-  style={{ paddingTop: 8 }}
-  data={comments}
-  renderItem={({ item }) => (
-    <Comment
-      text={item.text}
-      creator_alias={item.creator_alias}
-      date={item.date} // Make sure the date is being returned from the backend
-    />
-  )}
-  keyExtractor={(item) => item.id.toString()}
-/>
-      </View>
-      </View>
-      
-    </View>
-    </ScrollView>
+        style={{ paddingTop: 8, width: '95%' }}
+        data={comments}
+        ListHeaderComponent={
+          <View>
+            <View style={{ marginBottom: 10 }}>
+              <Text style={{ color: 'white', fontSize: 24 }}>Type: {selectedPing.ping_type}</Text>
+              <Text style={{ color: 'white', fontSize: 18 }}>Description: {selectedPing.desc}</Text>
+              <Text style={{ color: 'white', fontSize: 18 }}>Rating: {selectedPing.rating}</Text>
+              <Text style={{ color: 'white', fontSize: 18 }}>Votes: {selectedPing.votes}</Text>
+              <View style={{ borderBottomWidth: 1, borderBottomColor: 'white', width: '100%', marginVertical: 10 }} />
+              <View style={{ marginTop: 10 }}>
+                <Text style={{ color: 'white', fontSize: 18, marginBottom: 5 }}>Comments</Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginTop: 5,
+                    backgroundColor: 'white',
+                    borderRadius: 9,
+                    paddingHorizontal: 5,
+                    borderColor: '#ccc',
+                    borderWidth: 1,
+                  }}
+                >
+                  <TextInput
+                    style={{ flex: 1, marginRight: 5, fontSize: 14}}
+                    placeholder="Add a comment..."
+                    onChangeText={setNewCommentText}
+                    value={newCommentText}
+                  />
+                  <TouchableOpacity onPress={addComment}>
+                    <MaterialIcons name="add" size={23} color="#5438f2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <Comment
+            text={item.text}
+            creator_alias={item.creator_alias}
+            date={item.date} // Make sure the date is being returned from the backend
+          />
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      />
+    </>
   );
-  
+    
   
   const overlayStyle = (expanded) => ({
     position: 'absolute',

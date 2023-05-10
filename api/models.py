@@ -109,7 +109,7 @@ class Comment(models.Model):
     text = models.CharField(max_length=200)
     date = models.DateTimeField(auto_now_add=True)
     ping = models.ForeignKey(Ping, on_delete=models.CASCADE)
-    creator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, blank=False, null=True)  # Add this line
+    creator = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, blank=False, null=True) 
 
     def __str__(self):
         return self.text

@@ -9,6 +9,11 @@ const Profile = () => {
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
 
+  const goBack = () => {
+    navigation.goBack();
+  };
+
+  //used to logout the user and remove tokens 
   const removeTokens = async () => {
     try {
       await AsyncStorage.removeItem('accessToken');
@@ -51,7 +56,14 @@ const Profile = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.mainContainer}>
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={goBack} style={styles.backButton}>
+          <Icon name="arrow-left" size={25} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.container}>
+      
       {user ? (
         <>
           <View style={styles.headerContainer}>
@@ -62,8 +74,8 @@ const Profile = () => {
             <View style={styles.detailRow}>
               <Icon name="email" size={20} color="#fff" />
               <Text style={styles.detailText}>Email: {user.email}</Text>
-            </View>
-            <View style={styles.detailRow}>
+              </View>
+              <View style={styles.detailRow}>
               <Icon name="calendar-clock" size={20} color="#fff" />
               <Text style={styles.detailText}>Date Joined: {formatDate(user.date_joined)}</Text>
             </View>
@@ -76,17 +88,31 @@ const Profile = () => {
         <TouchableOpacity onPress={Logout}>
           <Text style={styles.buttonText}>Logout</Text>
         </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#1c1c1c',
-  },
+ mainContainer: {
+  flex: 1,
+  backgroundColor: '#1c1c1c',
+},
+container: {
+  flex: 1,
+  padding: 20,
+},
+topBar: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  alignItems: 'center',
+  padding: 10,
+},
+backButton: {
+  paddingHorizontal: 10,
+  paddingVertical: 5,
+},
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
